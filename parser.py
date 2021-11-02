@@ -1,6 +1,5 @@
 import requests
 from bs4 import BeautifulSoup
-from requests.api import get
 
 URL = requests.get("https://24.kg/").text
 
@@ -12,7 +11,6 @@ def get_link(html):
     return link
 
 def get_news(html):
-    
     soup = BeautifulSoup(html, "html.parser")
     text = soup.find('div', {'class':'cont'}).text
     print(text)
