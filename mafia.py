@@ -18,7 +18,12 @@ def game_start(message):
         markup = types.InlineKeyboardMarkup(row_width=2)
         button1 = types.InlineKeyboardButton('✅Готово', callback_data='ready')
         markup.add(button1)
-        bot.send_message(message.chat.id, "Пожалуйста добавьте меня в группу!", reply_markup=markup)
+        edit_message = bot.send_message(message.chat.id, "Пожалуйста добавьте меня в группу!", reply_markup=markup)
+        @bot.callback_query_handler(func=lambda call: True)
+        def callback_inline(message):
+            if message.data == 'ready':
+                bot.edit_message_text(chat_id=message.message.chat.id, text = "Хорошая работа!", message_id=edit_message, reply_markup=None)
+
     else:
         markup = types.InlineKeyboardMarkup(row_width=2)
         button1 = types.InlineKeyboardButton('🎲 Присоединиться!',url='https://t.me/thebest_chat_bot')
@@ -35,7 +40,7 @@ def game_start(message):
 
                 else:
                     players[message.from_user.id] = message.from_user.first_name
-                    bot.send_message(message.from_user.id, f"Вы зашли с {place.title}")
+                    bot.send_message(message.from_user.id, f"Вы зашли с {place.title}\nКогда начнеться новая игра пожалуйста введите снова /start\n\nЭто нужно чтобы вы добавились в игру!")
                     send_message = bot.send_message(place.id, f"Набор игроков...\n\nОсталось: {10-len(players)} игроков")#place.id - Это id группы
                     # bot.edit_message_text(f"Присоединилось: \n\n{players}\n\nОсталось:{10-len(players)}", chat_id=message.chat.id, message_id=send_message.message_id)
             else:
@@ -48,25 +53,27 @@ def game_start(message):
                 FFM.give_roles()
                 FFM.send_message_for_players("Игра началась!\nЧтобы написать другим игрокам введите в чат сообщение!")
                 status = 'Day'
-                while True:
-                    @bot.message_handler()
-                    def chat(message):
-                        if status == 'Day': 
-                            for num in range(1,8):                   
-                                if citizens[f'citizen{num}']['status'] == 'die':#Проверка на статус игроков
-                                    bot.send_message(citizens[f'citizen{num}']['id'], "Мертвые не могут разговаривать!")
-                                else:
-                                    FFM.send_message_for_players(f"[{message.from_user.first_name}]\n{message.text}")
-                            if police['status'] == 'die':
-                                bot.send_message(police['id'], "Мертвые не могут разговаривать!")
-                            elif doctor['status'] == 'die':
-                                bot.send_message(doctor['id'], "Мертвые не могут разговаривать!")
-                            elif mafia['status'] == 'die':
-                                bot.send_message(mafia['id'], "Мертвые не могут разговаривать!")
+                
+                @bot.message_handler() #Создали чат в котором игроки смогут разговаривать
+                def chat(message):
+                    if status == 'Day': 
+                        for num in range(1,8):                   
+                            if citizens[f'citizen{num}']['status'] == 'die':#Проверка на статус игроков
+                                bot.send_message(citizens[f'citizen{num}']['id'], "Мертвые не могут разговаривать!")
                             else:
                                 FFM.send_message_for_players(f"[{message.from_user.first_name}]\n{message.text}")
+                        if police['status'] == 'die':
+                            bot.send_message(police['id'], "Мертвые не могут разговаривать!")
+                        elif doctor['status'] == 'die':
+                            bot.send_message(doctor['id'], "Мертвые не могут разговаривать!")
+                        elif mafia['status'] == 'die':
+                            bot.send_message(mafia['id'], "Мертвые не могут разговаривать!")
                         else:
-                            bot.send_message(message.from_user.id, "Тише!\nТебя может услышать мафия!")
+                            FFM.send_message_for_players(f"[{message.from_user.first_name}]\n{message.text}")
+                    else:
+                        bot.send_message(message.from_user.id, "Тише!\nТебя может услышать мафия!")
+
+                while True:
                     time.sleep(50)
                     FFM.send_message_for_players( "--Ведущий--\nОсталось 50 секунд до начала ночи!")
                     time.sleep(50)
@@ -109,6 +116,7 @@ def game_start(message):
                                     bot.send_message(player_data['id'], "Вас вылечил доктор!")
                     else:
                         pass
+
                     #-----Шериф-----
                     if police['status'] == 'alive':
                         FFM.buttons('arrest', 'police')
@@ -129,9 +137,10 @@ def game_start(message):
                                     bot.edit_message_text(chat_id=message.message.chat.id, text = "Скип успешно завершен!", message_id=message.message.message_id, reply_markup=None)
                     else:
                         pass
+                    
 
 
-
+                    # Игра закончилась!
                     if citizens['citizen1'][status] == 'die' and citizens['citizen2'][status] == 'die' and citizens['citizen4'][status] == 'die' and citizens['citizen5'][status] == 'die' and citizens['citizen6'][status] == 'die' and citizens['citizen7'][status] == 'die' and mafia['status'] == 'alive' and police['status'] == 'die' and doctor['status'] == 'die':
                         bot.send_message(place.id, "В этой игре выиграла Мафия!")
                         break
@@ -140,6 +149,9 @@ def game_start(message):
                         break
                     
                             
+
+bot.polling(none_stop=True)
+
                             
                                     
 
@@ -147,11 +159,6 @@ def game_start(message):
 
 
 
-@bot.callback_query_handler(func=lambda call: True)
-def callback_inline(message):
-    if message.data == 'ready':
-        bot.edit_message_text(chat_id=message.message.chat.id, text = "Хорошая работа!", message_id=message.message.message_id, reply_markup=None)
-bot.polling(none_stop=True)
 
 
 
